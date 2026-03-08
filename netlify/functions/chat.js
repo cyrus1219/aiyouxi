@@ -37,7 +37,6 @@ exports.handler = async (event) => {
         messages,
         temperature: 0.85,
         max_tokens: 600,
-        response_format: { type: "json_object" },
       }),
     });
 

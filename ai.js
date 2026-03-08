@@ -24,7 +24,10 @@ async function fetchStory(messages) {
   const raw = data.choices?.[0]?.message?.content;
 
   try {
-    return JSON.parse(raw);
+    // 提取内容中的 JSON 块（兼容模型在前后输出多余文字的情况）
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("未找到 JSON 内容");
+    return JSON.parse(match[0]);
   } catch {
     throw new Error("AI 返回格式解析失败: " + raw);
   }
@@ -44,15 +47,8 @@ function buildMessages(gameState, playerChoice) {
 ${GAME_CONFIG.worldBackground}
 
 【输出格式要求】
-必须返回合法 JSON，结构如下：
-{
-  "story": "故事推进文本（80-150字，文风古朴）",
-  "options": [
-    { "text": "选项描述", "effect": { "属性key": 变化值 }, "hint": "简短提示" },
-    ...
-  ],
-  "isEnding": false
-}
+只输出一个合法 JSON 对象，不要有任何其他文字、代码块标记或解释，结构如下：
+{"story":"故事推进文本（80-150字，文风古朴）","options":[{"text":"选项描述","effect":{"属性key":变化值},"hint":"简短提示"}],"isEnding":false}
 
 规则：
 - options 提供 3 个，每个选项风格差异明显
