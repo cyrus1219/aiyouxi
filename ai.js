@@ -4,7 +4,7 @@
 // ============================================================
 
 async function fetchStory(messages) {
-  const response = await fetch("/.netlify/functions/chat", {
+  const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages }),
@@ -55,14 +55,10 @@ ${GAME_CONFIG.worldBackground}
       "attr": "对应属性key（strength/wisdom/charm/luck）",
       "dc": 难度数字(5/10/15/20),
       "requireItem": "需要的物品名（没有则为null）",
-      "successStory": "检定成功时的故事续写（60-100字）",
-      "failStory": "检定失败时的故事续写（60-100字）",
       "successEffect": {"属性key": 变化值},
       "failEffect": {"属性key": 变化值},
       "successItems": [{"action":"add/remove","name":"物品名","desc":"物品描述"}],
-      "failItems": [{"action":"add/remove","name":"物品名","desc":"物品描述"}],
-      "successIsEnding": false,
-      "failIsEnding": false
+      "failItems": [{"action":"add/remove","name":"物品名","desc":"物品描述"}]
     }
   ],
   "isEnding": false

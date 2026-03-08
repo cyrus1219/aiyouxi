@@ -48,10 +48,10 @@ const GAME_CONFIG = {
 
   // 角色属性定义
   attributes: [
-    { key: "strength",  name: "武力", desc: "战斗与体能",   min: 1, max: 10, default: 3 },
-    { key: "wisdom",    name: "智慧", desc: "推理与感知",   min: 1, max: 10, default: 3 },
-    { key: "charm",     name: "魅力", desc: "交涉与人缘",   min: 1, max: 10, default: 2 },
-    { key: "luck",      name: "运气", desc: "意外与机缘",   min: 1, max: 10, default: 2 },
+    { key: "strength",  name: "武力", desc: "战斗与体能",   min: 1, max: 20, default: 5 },
+    { key: "wisdom",    name: "智慧", desc: "推理与感知",   min: 1, max: 20, default: 5 },
+    { key: "charm",     name: "魅力", desc: "交涉与人缘",   min: 1, max: 20, default: 4 },
+    { key: "luck",      name: "运气", desc: "意外与机缘",   min: 1, max: 20, default: 4 },
   ],
 
   totalPoints: 10,   // 创建角色时可分配的额外点数

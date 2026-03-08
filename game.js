@@ -5,10 +5,9 @@
 const gameState = {
   playerName: "",
   attrs: {},
-  inventory: [],   // [{ name, desc }, ...]
-  history: [],     // [{ story, choice, rollResult }, ...]
+  inventory: [],
+  history: [],
   turn: 0,
-  pendingResult: null,  // 预生成的当前选项结果缓存 { optionIndex -> {success,fail} }
 };
 
 // ── 初始化 ────────────────────────────────────────────────
@@ -96,7 +95,6 @@ function doCheck(attrKey, dc) {
 async function callAI(playerChoice, rollResult) {
   setLoading(true);
   clearOptions();
-  gameState.pendingResult = null;
 
   try {
     const messages = buildMessages(gameState, playerChoice, rollResult);
@@ -105,23 +103,6 @@ async function callAI(playerChoice, rollResult) {
     gameState.history.push({ story: result.story, choice: playerChoice, rollResult });
     gameState.turn++;
     addLog(result.story, playerChoice, rollResult);
-
-    // 缓存每个选项的预生成内容
-    if (result.options) {
-      gameState.pendingResult = {};
-      result.options.forEach((opt, i) => {
-        gameState.pendingResult[i] = {
-          successStory: opt.successStory,
-          failStory:    opt.failStory,
-          successEffect: opt.successEffect,
-          failEffect:    opt.failEffect,
-          successItems:  opt.successItems || [],
-          failItems:     opt.failItems    || [],
-          successIsEnding: opt.successIsEnding || false,
-          failIsEnding:    opt.failIsEnding    || false,
-        };
-      });
-    }
 
     typeText(result.story, () => {
       setLoading(false);
@@ -140,21 +121,12 @@ async function callAI(playerChoice, rollResult) {
 
 // ── 玩家选择选项（本地处理，无需再调 AI）────────────────
 function chooseOption(index, opt) {
-  // 检查物品需求
   if (opt.requireItem && !hasItem(opt.requireItem)) return;
 
-  // DND 检定
   const rollResult = doCheck(opt.attr, opt.dc);
 
-  // 取预生成内容
-  const pre = gameState.pendingResult?.[index];
-  const isSuccess = rollResult.success;
-  const nextStory  = isSuccess ? pre?.successStory  : pre?.failStory;
-  const effect     = isSuccess ? pre?.successEffect : pre?.failEffect;
-  const itemChanges= isSuccess ? pre?.successItems  : pre?.failItems;
-  const isEnding   = isSuccess ? pre?.successIsEnding : pre?.failIsEnding;
-
   // 应用属性变化
+  const effect = rollResult.success ? opt.successEffect : opt.failEffect;
   if (effect) {
     Object.entries(effect).forEach(([key, delta]) => {
       if (gameState.attrs[key] !== undefined) {
@@ -165,40 +137,20 @@ function chooseOption(index, opt) {
   }
 
   // 应用物品变化
-  if (itemChanges) {
-    itemChanges.forEach(change => {
-      if (change.action === "add") {
-        if (!hasItem(change.name)) {
-          gameState.inventory.push({ name: change.name, desc: change.desc || "" });
-        }
-      } else if (change.action === "remove") {
-        gameState.inventory = gameState.inventory.filter(i => i.name !== change.name);
-      }
-    });
-  }
+  const itemChanges = rollResult.success ? (opt.successItems || []) : (opt.failItems || []);
+  itemChanges.forEach(change => {
+    if (change.action === "add" && !hasItem(change.name)) {
+      gameState.inventory.push({ name: change.name, desc: change.desc || "" });
+    } else if (change.action === "remove") {
+      gameState.inventory = gameState.inventory.filter(i => i.name !== change.name);
+    }
+  });
 
   renderSidebar();
   clearOptions();
 
-  // 显示骰子结果
   showRollResult(rollResult, () => {
-    if (nextStory) {
-      // 用预生成内容直接显示，不再调 AI
-      gameState.history.push({ story: nextStory, choice: opt.text, rollResult });
-      gameState.turn++;
-      addLog(nextStory, opt.text, rollResult);
-      typeText(nextStory, () => {
-        if (isEnding) {
-          showEnding(nextStory);
-        } else {
-          // 预生成内容展示完后，再调 AI 获取下一轮
-          callAI(opt.text, rollResult);
-        }
-      });
-    } else {
-      // 没有预生成内容，直接调 AI
-      callAI(opt.text, rollResult);
-    }
+    callAI(opt.text, rollResult);
   });
 }
 
